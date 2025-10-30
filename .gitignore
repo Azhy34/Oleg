@@ -1,0 +1,12 @@
+# Environments
+.env
+backend/.env
+
+# Models
+sam-vit-b-quantized/
+
+# Python
+__pycache__/
+
+# IDE
+.vscode/

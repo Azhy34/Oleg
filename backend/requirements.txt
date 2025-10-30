@@ -1,0 +1,10 @@
+fastapi==0.120.1
+uvicorn[standard]==0.38.0
+replicate==1.0.7
+python-multipart==0.0.20
+celery==5.5.3
+redis==7.0.1
+boto3==1.40.61
+pydantic==2.12.3
+slowapi==0.1.9
+pydantic-settings==2.11.0
