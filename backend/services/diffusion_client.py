@@ -14,7 +14,7 @@ class DiffusionClient:
         original_image_path: str,
         mask_image_path: str,
         wallpaper_image_path: str
-    ) -> bytes:
+    ) -> str:
         """
         Calls the Replicate API to generate a new wallpaper by applying a pattern
         to a masked area of an original image.
@@ -25,7 +25,7 @@ class DiffusionClient:
             wallpaper_image_path: Path to the wallpaper pattern image.
 
         Returns:
-            The raw bytes of the generated image.
+            The URL of the generated image.
         """
         print("Starting wallpaper generation via Replicate API...")
         
@@ -50,13 +50,9 @@ class DiffusionClient:
             raise Exception("Invalid response from Replicate API.")
             
         result_url = output[0]
-        print(f"Generation finished. Downloading result from: {result_url}")
+        print(f"Generation finished. Result URL: {result_url}")
 
-        # Download the generated image
-        response = requests.get(result_url, timeout=30)
-        response.raise_for_status()
-        
-        return response.content
+        return result_url
 
 # Create a single instance of the client
 diffusion_client = DiffusionClient(api_token=settings.REPLICATE_API_TOKEN)

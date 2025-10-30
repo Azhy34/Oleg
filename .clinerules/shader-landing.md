@@ -51,3 +51,48 @@ You are an expert full-stack developer proficient in TypeScript, React, Next.js,
 3.  **Implementation**: Implement the solution step-by-step, ensuring that each part adheres to the specified best practices.
 4.  **Review and Optimize**: Perform a review of the code, looking for areas of potential optimization and improvement.
 5.  **Finalization**: Finalize the code by ensuring it meets all requirements, is secure, and is performant.
+
+---
+
+### Plan: Refactoring the Segmentation System
+
+**Backend (FastAPI)**
+
+*   `[ ]` **1. Integrate `segment-anything` library:**
+    *   `[ ]` 1.1. Add `segment-anything` to `backend/requirements.txt`.
+    *   `[ ]` 1.2. Create a new service `EmbeddingService` (`backend/services/embedding_service.py`) to encapsulate SAM logic.
+    *   `[ ]` 1.3. Implement logic in the service to load the SAM model (encoder) on application startup.
+
+*   `[ ]` **2. Create New API Endpoint:**
+    *   `[ ]` 2.1. In `backend/api/v1/sessions.py`, add a new endpoint `POST /sessions/{session_id}/embed`.
+    *   `[ ]` 2.2. This endpoint will take the original image from S3, generate its embedding using `EmbeddingService`, and save the embedding back to S3 (e.g., as a `.npy` file).
+    *   `[ ]` 2.3. Update the session state in Redis, adding the path to the embedding file.
+
+*   `[ ]` **3. (Optional) Refactor Worker:**
+    *   `[ ]` 3.1. Fix the Base64 decoding error in `backend/worker/worker.py` by adding logic to remove the `data:image/png;base64,` prefix.
+
+**Frontend (Next.js)**
+
+*   `[ ]` **4. Update API Client:**
+    *   `[ ]` 4.1. In `shader-landing/src/lib/api.ts`, add a new function `generateEmbedding(sessionId)`.
+    *   `[ ]` 4.2. Modify `handleFileChange` in `EditorWorkflow.tsx`: after successfully creating a session, immediately call `generateEmbedding`.
+
+*   `[ ]` **5. Complete Replacement of `useSam.ts` Hook:**
+    *   `[ ]` 5.1. Delete the current `shader-landing/src/hooks/useSam.ts`.
+    *   `[ ]` 5.2. Create a new `useSam.ts` based on the architecture from the [official demo](https://github.com/facebookresearch/segment-anything/tree/main/demo).
+    *   `[ ]` 5.3. The new hook must accept the embedding (loaded from S3) as a prop.
+    *   `[ ]` 5.4. Implement the logic for running the lightweight ONNX model (decoder) in the browser.
+
+*   `[ ]` **6. Update `EditorWorkflow.tsx` Component:**
+    *   `[ ]` 6.1. Update the component to manage the loading of the embedding and pass it to the new `useSam` hook.
+    *   `[ ]` 6.2. Implement a new UX for interaction: update the mask on mouse move (`onMouseMove`) and fix points on click.
+    *   `[ ]` 6.3. Add more descriptive loading indicators (e.g., "Generating embedding...", "Model ready").
+
+*   `[ ]` **7. Final Verification and Push:**
+    *   `[ ]` 7.1. Test the end-to-end flow.
+    *   `[ ]` 7.2. Commit and push the updated implementation.
+
+---
+
+### Workflow Instructions
+- **делай Plan: Refactoring the Segmentation System по 1 шагу. после кажого ага оставновка и отчет по работе.**

@@ -8,8 +8,9 @@ interface SessionResponse {
 }
 
 interface StatusResponse {
-  status: 'new' | 'queued' | 'processing' | 'completed' | 'failed';
+  status: 'new' | 'embedding_completed' | 'queued' | 'processing' | 'completed' | 'failed';
   result_s3_path?: string;
+  s3_embedding_path?: string;
   error?: string;
 }
 
@@ -35,6 +36,21 @@ export const createSession = async (imageFile: File): Promise<SessionResponse> =
   }
 
   return response.json();
+};
+
+/**
+ * Triggers the embedding generation process on the backend.
+ * @param sessionId The ID of the current session.
+ */
+export const generateEmbedding = async (sessionId: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/v1/sessions/${sessionId}/embed`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Failed to start embedding generation.' }));
+    throw new Error(errorData.detail || 'Server error');
+  }
 };
 
 /**

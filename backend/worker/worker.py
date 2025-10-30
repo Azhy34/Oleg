@@ -1,6 +1,5 @@
 import os
 import logging
-from celery import Celery
 import tempfile
 import requests
 import base64
@@ -8,20 +7,13 @@ from io import BytesIO
 
 from backend.core.config import settings
 from backend.services.redis_client import sync_redis_client
-from backend.services.s3_client import download_file_from_s3, upload_file_like_object_to_s3
 from backend.services.diffusion_client import diffusion_client
 from backend.core import constants
+from backend.worker.celery_app import celery_app
 
 # --- Logger ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# --- Celery App ---
-celery_app = Celery(
-    "worker",
-    broker=settings.REDIS_URL,
-    backend=settings.REDIS_URL
-)
 
 def _prepare_input_files(session_id: str, mask_b64: str, wallpaper_url: str, tmpdir: str):
     """Downloads and prepares all necessary files for the diffusion model."""
@@ -29,11 +21,13 @@ def _prepare_input_files(session_id: str, mask_b64: str, wallpaper_url: str, tmp
     wallpaper_image_path = os.path.join(tmpdir, "wallpaper.jpg")
     mask_image_path = os.path.join(tmpdir, "mask.png")
 
-    # 1. Fetch original image from S3
-    s3_path = sync_redis_client.hget(f"session:{session_id}", constants.SESSION_S3_PATH)
-    if not s3_path:
-        raise ValueError("S3 path not found in session.")
-    download_file_from_s3(settings.S3_BUCKET_NAME, s3_path.decode(), original_image_path)
+    # 1. Fetch original image from Redis
+    image_b64 = sync_redis_client.hget(f"session:{session_id}", constants.SESSION_ORIGINAL_IMAGE_B64)
+    if not image_b64:
+        raise ValueError("Original image not found in session.")
+    
+    with open(original_image_path, "wb") as f:
+        f.write(base64.b64decode(image_b64))
 
     # 2. Download wallpaper image from URL
     response = requests.get(wallpaper_url, timeout=15)
@@ -62,16 +56,12 @@ def process_wallpaper(self, session_id: str, mask_b64: str, wallpaper_url: str):
             original_path, mask_path, wallpaper_path = _prepare_input_files(session_id, mask_b64, wallpaper_url, tmpdir)
 
             # Generate wallpaper using the diffusion client
-            result_bytes = diffusion_client.generate_wallpaper(original_path, mask_path, wallpaper_path)
-
-            # Upload result to S3
-            result_s3_key = f"{constants.S3_RESULTS_PREFIX}/{session_id}.png"
-            upload_file_like_object_to_s3(BytesIO(result_bytes), settings.S3_BUCKET_NAME, result_s3_key)
+            result_url = diffusion_client.generate_wallpaper(original_path, mask_path, wallpaper_path)
 
             # Update session in Redis on success
             final_data = {
                 constants.SESSION_STATUS: constants.SessionStatus.COMPLETED.value,
-                constants.SESSION_RESULT_S3_PATH: result_s3_key
+                constants.SESSION_RESULT_URL: result_url
             }
             sync_redis_client.hset(f"session:{session_id}", mapping=final_data)
             sync_redis_client.hincrby(f"session:{session_id}", constants.SESSION_ATTEMPTS_LEFT, -1)

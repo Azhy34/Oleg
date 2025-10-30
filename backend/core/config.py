@@ -10,19 +10,17 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding='utf-8', extra='ignore')
 
     # Redis
-    REDIS_URL: str = "redis://localhost:6379"
+    REDIS_URL: str
 
     # CORS - can be a comma-separated list in the .env file
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
 
-    # AWS S3
-    AWS_ACCESS_KEY_ID: str
-    AWS_SECRET_ACCESS_KEY: str
-    S3_BUCKET_NAME: str
-    S3_ENDPOINT_URL: str | None = None  # For MinIO or other S3-compatible services
-
     # Replicate API
     REPLICATE_API_TOKEN: str
+
+    # SAM Model
+    SAM_MODEL_TYPE: str = "vit_b"
+    SAM_CHECKPOINT_PATH: str = "sam_vit_b_01ec64.pth"
 
 # Create a single instance of the settings
 settings = Settings()

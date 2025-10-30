@@ -12,6 +12,18 @@ from slowapi.errors import RateLimitExceeded
 
 from backend.core.config import settings
 from backend.api.v1.sessions import router as sessions_router
+from backend.services.embedding_service import EmbeddingService
+
+# --------------------------------------------------------------------------
+# Service Initialization
+# --------------------------------------------------------------------------
+# Load the SAM model on startup and attach it to the app state.
+# TODO: User needs to download the SAM model checkpoint file 'sam_vit_b_01ec64.pth'
+# embedding_service = EmbeddingService(
+#     checkpoint_path=settings.SAM_CHECKPOINT_PATH,
+#     model_type=settings.SAM_MODEL_TYPE
+# )
+embedding_service = None # Temporarily disable
 
 # --------------------------------------------------------------------------
 # Rate Limiting Setup
@@ -29,6 +41,7 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
+# app.state.embedding_service = embedding_service # Temporarily disable
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # --------------------------------------------------------------------------

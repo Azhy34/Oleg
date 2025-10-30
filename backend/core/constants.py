@@ -3,6 +3,7 @@ from enum import Enum
 # --- Session Statuses ---
 class SessionStatus(str, Enum):
     NEW = "new"
+    EMBEDDING_COMPLETED = "embedding_completed"
     QUEUED = "queued"
     GENERATING = "generating"
     COMPLETED = "completed"
@@ -12,14 +13,11 @@ class SessionStatus(str, Enum):
 # These are the keys used in the Redis hash for each session.
 SESSION_STATUS = "status"
 SESSION_ORIGINAL_FILENAME = "original_filename"
-SESSION_S3_PATH = "s3_path"
+SESSION_ORIGINAL_IMAGE_B64 = "original_image_b64"
+SESSION_EMBEDDING_B64 = "embedding_b64"
 SESSION_ATTEMPTS_LEFT = "attempts_left"
-SESSION_RESULT_S3_PATH = "result_s3_path"
+SESSION_RESULT_URL = "result_url"
 SESSION_ERROR_MESSAGE = "error"
-
-# --- S3 Paths ---
-S3_ORIGINALS_PREFIX = "originals"
-S3_RESULTS_PREFIX = "results"
 
 # --- File Validation ---
 ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png"]

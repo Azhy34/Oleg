@@ -4,7 +4,8 @@ from pydantic import BaseModel
 from backend.services.session_service import (
     create_session_service,
     start_generation_service,
-    get_session_status_service
+    get_session_status_service,
+    # generate_embedding_service # Temporarily disable
 )
 
 router = APIRouter(prefix="/v1", tags=["Sessions"])
@@ -23,6 +24,22 @@ async def create_session(file: UploadFile = File(...)):
     Returns the newly created session's data, including its ID.
     """
     return await create_session_service(file)
+
+
+# @router.post("/sessions/{session_id}/embed", status_code=202)
+# async def generate_embedding(session_id: str, request: Request):
+#     """
+#     Generates and saves the embedding for the session's image.
+#
+#     - **session_id**: The ID of the session.
+#     - **request**: The request object to access the embedding service.
+#
+#     Returns an acceptance message.
+#     """
+#     # TODO: This is temporarily disabled until the user provides the SAM model file.
+#     # embedding_service = request.app.state.embedding_service
+#     # return await generate_embedding_service(session_id, embedding_service)
+#     raise HTTPException(status_code=503, detail="Embedding generation is temporarily disabled. SAM model file is missing.")
 
 
 @router.post("/sessions/{session_id}/generate", status_code=202)

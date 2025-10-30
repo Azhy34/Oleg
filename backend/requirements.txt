@@ -8,3 +8,4 @@ boto3==1.40.61
 pydantic==2.12.3
 slowapi==0.1.9
 pydantic-settings==2.11.0
+segment-anything
