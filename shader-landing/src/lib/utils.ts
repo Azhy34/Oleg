@@ -79,3 +79,32 @@ export const rleToMask = (rle: number[], width: number, height: number) => {
   ctx.putImageData(imageData, 0, 0);
   return canvas.toDataURL();
 };
+
+/**
+ * Calculates the click coordinates on the original image based on a click event.
+ * @param event - The mouse event.
+ * @returns The coordinates { x, y } on the original image.
+ */
+export const getOriginalCoords = (event: React.MouseEvent<HTMLImageElement>) => {
+  const image = event.currentTarget;
+  const rect = image.getBoundingClientRect();
+
+  // Get the original image dimensions
+  const { naturalWidth, naturalHeight } = image;
+  // Get the displayed image dimensions
+  const { clientWidth, clientHeight } = image;
+
+  // Calculate the scale factor
+  const scaleX = naturalWidth / clientWidth;
+  const scaleY = naturalHeight / clientHeight;
+
+  // Calculate the click coordinates relative to the image element
+  const clickX = event.clientX - rect.left;
+  const clickY = event.clientY - rect.top;
+
+  // Scale the coordinates to the original image size
+  const originalX = clickX * scaleX;
+  const originalY = clickY * scaleY;
+
+  return { x: originalX, y: originalY };
+};

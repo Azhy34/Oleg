@@ -4,9 +4,26 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAppStore } from '@/lib/store';
 import { useSam } from '@/hooks/useSam';
 import { createSession, generateWallpaper, pollStatus } from '@/lib/api';
+import { getOriginalCoords } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
+/**
+ * A centralized error handler for API calls.
+ * @param err - The error object.
+ * @param setError - The state setter function for errors from the app store.
+ */
+const handleApiError = (err: unknown, setError: (message: string) => void) => {
+  const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+  setError(message);
+};
+
+/**
+ * @component EditorWorkflow
+ * @description A multi-step workflow component for uploading an image, creating a mask using the SAM model,
+ * and generating a new wallpaper based on the mask and a provided wallpaper URL.
+ * It manages the entire state of the process, from file selection to displaying the final result.
+ */
 export default function EditorWorkflow() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [wallpaperUrl, setWallpaperUrl] = useState('');
@@ -29,44 +46,33 @@ export default function EditorWorkflow() {
         const session = await createSession(file);
         startSession(session.session_id);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+        handleApiError(err, setError);
       }
     }
   }, [reset, startSession, setError]);
 
+  /**
+   * Handles the wallpaper generation request.
+   */
   const handleGenerate = useCallback(async () => {
     if (!sessionId || !mask) return;
     try {
       startGeneration();
       await generateWallpaper(sessionId, mask, wallpaperUrl);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+      handleApiError(err, setError);
     }
   }, [sessionId, mask, wallpaperUrl, startGeneration, setError]);
 
+  /**
+   * Handles user clicks on the image to create positive or negative points for the mask.
+   * @param e - The mouse event.
+   * @param isPositive - True for a left-click (positive point), false for a right-click (negative point).
+   */
   const handleImageInteraction = useCallback((e: React.MouseEvent<HTMLImageElement>, isPositive: boolean) => {
     e.preventDefault();
-    const image = e.currentTarget;
-    const rect = image.getBoundingClientRect();
-
-    // Get the original image dimensions
-    const { naturalWidth, naturalHeight } = image;
-    // Get the displayed image dimensions
-    const { clientWidth, clientHeight } = image;
-
-    // Calculate the scale factor
-    const scaleX = naturalWidth / clientWidth;
-    const scaleY = naturalHeight / clientHeight;
-
-    // Calculate the click coordinates relative to the image element
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-
-    // Scale the coordinates to the original image size
-    const originalX = clickX * scaleX;
-    const originalY = clickY * scaleY;
-
-    handleImageClick(originalX, originalY, isPositive);
+    const { x, y } = getOriginalCoords(e);
+    handleImageClick(x, y, isPositive);
   }, [handleImageClick]);
 
   // Effect for polling status
@@ -85,7 +91,7 @@ export default function EditorWorkflow() {
           clearInterval(interval);
         }
       } catch (err) {
-        setError('Failed to get status.');
+        handleApiError(err, setError);
         clearInterval(interval);
       }
     }, 3000);
